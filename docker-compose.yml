@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - GIN_GROM_DATABASE_HOST=mysql
+      - GIN_GROM_DATABASE_USERNAME=root
+      - GIN_GROM_DATABASE_PASSWORD=password
+      - GIN_GROM_DATABASE_DBNAME=gin_grom
+    depends_on:
+      - mysql
+      - redis
+    volumes:
+      - ./logs:/root/logs
+    networks:
+      - gin-grom-network
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: gin_grom
+      MYSQL_CHARACTER_SET_SERVER: utf8mb4
+      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - gin-grom-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - gin-grom-network
+
+  adminer:
+    image: adminer
+    ports:
+      - "8081:8080"
+    depends_on:
+      - mysql
+    networks:
+      - gin-grom-network
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  gin-grom-network:
+    driver: bridge
